@@ -1,230 +1,339 @@
 <html>
 
 <head>
-  <style>
-    html {
-      padding: 0px;
-      margin: 0px;
-      overflow: hidden;
-    }
+    <style>
+        body {
+            padding: 0px;
+            margin: 0px;
+            overflow: hidden;
+        }
 
-    canvas {
-      padding: 0px;
-      margin: 0px 0px 0px 0px;
-    }
+        * {
+            font-family: arial;
+        }
 
-    p {
-      position: fixed;
-    }
+        canvas {
+            padding: 0px;
+            margin: 0px 0px 0px 0px;
+        }
 
-    #score {
-      left: 25px;
-    }
+        p {
+            position: fixed;
+        }
 
-    #version {
-      right: 25px;
-      bottom: 10px;
-    }
+        #score {
+            left: 25px;
+        }
 
-    #main {
-      background-color: #efefef;
-    }
+        #main {
+            background-color: #efefef;
+        }
 
-    #menu {
-      background-color: transparent;
-      border: 0px;
-    }
+        #menu {
+            background-color: transparent;
+            border: 0px;
+        }
 
-    .button {
-      font-size: 25px;
-      position: fixed;
-      width: 100px;
-      height: 100px;
-      border-radius: 50px;
-    }
+        .button {
+            font-size: 25px;
+            position: fixed;
+            width: 100px;
+            height: 100px;
+            border-radius: 50px;
+            cursor: pointer;
+        }
 
-    #play {
-      background-color: #00bb00;
-      background-image: linear-gradient(to top, #007700, #00aa00);
-      color: #ffffff;
-      border: 2px solid #003300;
-    }
+        #play {
+            background-color: #00bb00;
+            background-image: linear-gradient(to top, #007700, #00aa00);
+            color: #ffffff;
+            border: 2px solid #003300;
+        }
 
-    #play:hover {
-      background-image: linear-gradient(to top, #005500, #009a00);
-      background-color: #00aa00;
-    }
-  </style>
+        #play:hover {
+            background-image: linear-gradient(to top, #005500, #009a00);
+            background-color: #00aa00;
+        }
+
+        #settings {
+            width: 90px;
+            height: 90px;
+            background-color: #00bb00;
+            background-image: linear-gradient(to top, #808080, #b3b3b3);
+            color: #ffffff;
+            border: 2px solid #003300;
+            left: 0px;
+            top: 0px;
+            font-size: 20;
+        }
+
+        #settings:hover {
+            background-image: linear-gradient(to top, #666666, #999999);
+            background-color: #00aa00;
+        }
+    </style>
 </head>
 
 <body>
-  <center>
-    <p id="score">score: 0</p>
-    <p id="version">version 1.1</p>
-    <canvas id="main" width="0" height="0"></canvas>
-    <dialog id="menu">
-      <button id="play" class="button">Play</button>
-    </dialog>
-  </center>
-  <script>
-    var main = document.getElementById("main");
-    var menu = document.getElementById("menu");
-    var play = document.getElementById("play");
-    var interval = null;
-    var timeout = null;
-    var ctx = main.getContext("2d");
-    var score = 0;
-    var scoreCounter = document.getElementById("score");
-    var x = null;
-    var y = main.height = window.innerHeight - 20;
-    var dx = 2;
-    var dy = -2;
-    var ballColor = "#" + Math.floor(Math.random() * 16777215).toString(16);
-    var mainMenuAllowed = false;
-    var startAllowed = false;
-    var resizeEvent = null;
-    var ballRadius = 20;
-    var ball = null;
-    var mouseX = null;
-    var mouseY = null;
+    <title id="title">Bouncy Ballz</title>
+    <center>
+        <p id="score">Score: 0</p>
+        <canvas id="main" width="0" height="0"></canvas>
+        <dialog id="settingsMenu" style="width: 0; height: 0; border: none; border-radius: 15px;">
+            <h1 id="settingsTitle" style="position: fixed;">Settings</h1>
+            <button id="settingsClose"
+                style="background-color: #ff0000; border-radius: 100px; position: fixed; border: none; text-align: center; color: #ffffff; cursor: pointer;"
+                onclick="document.getElementById('settingsMenu').close();">×</button>
+            <p id="cbcP" style="font-size: 20px; left: 2px;">Custom Ball Color</p>
+            <button id="cbc" data-state="off" onclick="cbcSwitch();"
+                style="margin: auto; background-color: #E9E9EA; border: none; padding: 0px; width: 52px; height: 31px; position: fixed; border-radius: 16px; transition-duration: 0.25s; cursor: pointer;">
+                <div id="cbcSlider"
+                    style="background-color: #ffffff; width: 25px; height: 25px; position: absolute; top: 3; left: 3; transition-duration: 0.25s; border-radius: 100px; border: none; padding: 0px; box-shadow: 0px 2px 3px rgba(0,0,0,0.3); pointer-events: none;">
+                </div>
+            </button>
+            <input disabled="true" id="cbcInput" type="color" style="position: fixed; cursor: not-allowed;"
+                height="31px"></input>
+        </dialog>
+        <dialog id="menu">
+            <button id="play" class="button">Play</button>
+            <button id="settings" class="button">Settings</button>
+        </dialog>
+    </center>
+    <script>
+        var main = document.getElementById("main");
+        var menu = document.getElementById("menu");
+        var play = document.getElementById("play");
+        var settings = document.getElementById("settings");
+        var settingsMenu = document.getElementById("settingsMenu");
+        var settingsTitle = document.getElementById("settingsTitle");
+        var settingsClose = document.getElementById("settingsClose");
+        var cbc = document.getElementById("cbc");
+        var cbcP = document.getElementById("cbcP");
+        var cbcInput = document.getElementById("cbcInput");
+        var interval = null;
+        var timeout = null;
+        var ctx = main.getContext("2d");
+        var score = 0;
+        var scoreIndicator = document.getElementById("scoreIndicator");
+        var scoreCounter = document.getElementById("score");
+        var x = null;
+        var y = main.height = window.innerHeight - 20;
+        var dx = 2;
+        var dy = -2;
+        var ballColor = "#" + Math.floor(Math.random() * 16777215).toString(16);
+        var ballColorEnabled = false;
+        var ballColorColor = "#000000";
+        var mainMenuAllowed = false;
+        var startAllowed = false;
+        var resizeEvent = null;
+        var settingsEvent = null;
+        var ballRadius = 20;
+        var ball = null;
+        var mouseX = null;
+        var mouseY = null;
 
-    function start() {
-      if (!startAllowed) {
-        startAllowed = true;
-        console.log("starting");
-        clearInterval(interval);
-        x = Math.floor(Math.random() * main.width);
-        if (x > main.width - ballRadius) {
-          x += -ballRadius * 2;
-        } else if (x < ballRadius * 2) {
-          x += ballRadius * 2;
+        function start() {
+            if (!startAllowed) {
+                startAllowed = true;
+                console.log("starting");
+                clearInterval(interval);
+                x = Math.floor(Math.random() * main.width);
+                if (x > main.width - ballRadius) {
+                    x += -ballRadius * 2;
+                } else if (x < ballRadius * 2) {
+                    x += ballRadius * 2;
+                }
+                y = main.height - 30;
+                ballRadius = 20;
+                if (!ballColorEnabled) {
+                    ballColor = "#" + Math.floor(Math.random() * 16777215).toString(16);
+                } else {
+                    ballColor = ballColorColor;
+                }
+                score = 0;
+                time = 0;
+                dx = 2;
+                dy = -2;
+                clearTimeout(timeout);
+                timeout = setTimeout(() => {
+                    startAllowed = true;
+                    clearCurrentInterval();
+                    mainMenu();
+                }, 3000)
+                interval = setInterval(draw, 10);
+            }
         }
-        y = main.height - 30;
-        ballRadius = 20;
-        ballColor = "#" + Math.floor(Math.random() * 16777215).toString(16);
-        score = 0;
-        time = 0;
-        dx = 2;
-        dy = -2;
-        clearTimeout(timeout);
-        timeout = setTimeout(() => {
-          startAllowed = true;
-          clearCurrentInterval();
-          mainMenu();
-        }, 3000)
-        interval = setInterval(draw, 10);
-      }
-    }
 
-    function mainMenu() {
-      if (!mainMenuAllowed) {
-        console.log("main menu");
-        mainMenuAllowed = true;
-        play.style.left =
-          main.getBoundingClientRect().left + main.width / 2 - 50 + "px";
-        play.style.top =
-          main.getBoundingClientRect().top + main.height / 2 - 50 + "px";
-        menu.show();
-        play.addEventListener("click", () => {
-          menu.close();
-          mainMenuAllowed = false;
-          start();
+        function mainMenu() {
+            if (!mainMenuAllowed) {
+                console.log("main menu");
+                mainMenuAllowed = true;
+                menu.show();
+                play.style.left = main.getBoundingClientRect().left + main.width / 2 - 50;
+                play.style.top = main.getBoundingClientRect().top + main.height / 2 - 50;
+                settings.style.left = play.getBoundingClientRect().left + 125;
+                settings.style.top = play.getBoundingClientRect().top + 5;
+                play.addEventListener("click", () => {
+                    menu.close();
+                    mainMenuAllowed = false;
+                    start();
+                });
+            }
+        }
+
+        function cbcSwitch() {
+            var slider = document.getElementById('cbcSlider');
+            var bar = document.getElementById('cbc');
+            let state = bar.getAttribute('data-state');
+            if (state == 'on') {
+                bar.setAttribute('data-state', 'off');
+                cbcInput.setAttribute("disabled", "true");
+                ballColorEnabled = false;
+                cbcInput.style.cursor = "not-allowed";
+                slider.style.left = '3';
+                bar.style.backgroundColor = "#E9E9EA";
+            } else {
+                bar.setAttribute('data-state', 'on');
+                cbcInput.removeAttribute("disabled")
+                ballColorEnabled = true;
+                cbcInput.style.cursor = "pointer";
+                slider.style.left = '24';
+                bar.style.backgroundColor = "#2ED057";
+            }
+        }
+
+        function clearCurrentInterval() {
+            if (interval !== null) {
+                clearInterval(interval);
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, main.width, main.height);
+            ctx.beginPath();
+            ball = ctx.arc(x, y, ballRadius, 0, Math.PI * 2, false);
+            ctx.fillStyle = ballColor;
+            ctx.fill();
+            ctx.closePath();
+            if (x + dx > main.width - ballRadius || x + dx < ballRadius) {
+                if (!ballColorEnabled) {
+                    ballColor = "#" + Math.floor(Math.random() * 16777215).toString(16);
+                }
+                dx = -dx;
+            }
+            if (y + dy > main.height - ballRadius || y + dy < ballRadius) {
+                if (!ballColorEnabled) {
+                    ballColor = "#" + Math.floor(Math.random() * 16777215).toString(16);
+                }
+                dy = -dy;
+            }
+            x += dx;
+            y += dy;
+            ballRadius += 0.01;
+            if (dx > 0) {
+                dx += 0.005;
+            } else {
+                dx += -0.005;
+            }
+            if (dy > 0) {
+                dy += 0.005;
+            } else {
+                dy += -0.005;
+            }
+            if (mouseX !== null && mouseY !== null) {
+                if (
+                    mouseX > x &&
+                    mouseX < x + ballRadius &&
+                    mouseY > y &&
+                    mouseY < y + ballRadius
+                ) {
+                    startAllowed = false;
+                    clearCurrentInterval();
+                    mainMenu();
+                }
+            }
+            score += 1;
+            scoreCounter.innerHTML = "Score: " + score;
+        }
+        main.addEventListener("mouseleave", () => {
+            if (interval !== null) {
+                clearInterval(interval);
+                startAllowed = false;
+            }
+            mainMenu();
         });
-      }
-    }
-
-    function clearCurrentInterval() {
-      if (interval !== null) {
-        clearInterval(interval);
-      }
-    }
-
-    function draw() {
-      ctx.clearRect(0, 0, main.width, main.height);
-      ctx.beginPath();
-      ball = ctx.arc(x, y, ballRadius, 0, Math.PI * 2, false);
-      ctx.fillStyle = ballColor;
-      ctx.fill();
-      ctx.closePath();
-      if (x + dx > main.width - ballRadius || x + dx < ballRadius) {
-        ballColor = "#" + Math.floor(Math.random() * 16777215).toString(16);
-        dx = -dx;
-        new Audio("Ping-pong-ball-bounce-sound-effect.mp3").play();
-      }
-      if (y + dy > main.height - ballRadius || y + dy < ballRadius) {
-        ballColor = "#" + Math.floor(Math.random() * 16777215).toString(16);
-        dy = -dy;
-        new Audio("Ping-pong-ball-bounce-sound-effect.mp3").play();
-      }
-      x += dx;
-      y += dy;
-      ballRadius += 0.01;
-      if (dx > 0) {
-        dx += 0.005;
-      } else {
-        dx += -0.005;
-      }
-      if (dy > 0) {
-        dy += 0.005;
-      } else {
-        dy += -0.005;
-      }
-      if (mouseX !== null && mouseY !== null) {
-        if (
-          mouseX > x &&
-          mouseX < x + ballRadius &&
-          mouseY > y &&
-          mouseY < y + ballRadius
-        ) {
-          startAllowed = false;
-          clearCurrentInterval();
-          mainMenu();
-        }
-      }
-      score += 1;
-      scoreCounter.innerHTML = "score: " + score;
-    }
-    main.addEventListener("mouseleave", () => {
-      if (interval !== null) {
-        clearInterval(interval);
-        startAllowed = false;
-      }
-      mainMenu();
-    });
-    document.addEventListener("mousemove", () => {
-      clearTimeout(timeout);
-      timeout = setTimeout(() => {
-        startAllowed = true;
-        clearCurrentInterval();
+        document.addEventListener("mousemove", () => {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => {
+                startAllowed = true;
+                clearCurrentInterval();
+                mainMenu();
+            }, 3000)
+            mouseX = window.event.clientX;
+            mouseY = window.event.clientY;
+            if (
+                window.event.clientX > x &&
+                window.event.clientX < x + ballRadius * 2 &&
+                window.event.clientY > y &&
+                window.event.clientY < y + ballRadius * 2
+            ) {
+                startAllowed = false;
+                clearCurrentInterval();
+                mainMenu();
+            }
+        });
+        main.width = document.body.clientWidth;
+        main.height = window.innerHeight;
+        settingsMenu.style.width = (0.4 * document.body.clientWidth);
+        settingsMenu.style.height = (0.5 * window.innerHeight);
+        play.style.left = main.getBoundingClientRect().left + main.width / 2 - 50;
+        play.style.top = main.getBoundingClientRect().top + main.height / 2 - 50;
+        settings.style.left = play.getBoundingClientRect().left + 125;
+        settings.style.top = play.getBoundingClientRect().top + 5;
+        x = Math.floor(Math.random() * main.width);
+        console.log(x);
+        resizeEvent = addEventListener("resize", () => {
+            main.width = document.body.clientWidth;
+            main.height = window.innerHeight;
+            play.style.left = main.getBoundingClientRect().left + main.width / 2 - 50;
+            play.style.top = main.getBoundingClientRect().top + main.height / 2 - 50;
+            settings.style.left = play.getBoundingClientRect().left + 125;
+            settings.style.top = play.getBoundingClientRect().top + 5;
+            settingsMenu.style.width = (0.4 * document.body.clientWidth);
+            settingsMenu.style.height = (0.5 * window.innerHeight);
+            cbc.style.transitionDuration = "0s";
+            cbcP.style.left = settingsMenu.getBoundingClientRect().left + 5;
+            cbc.style.left = cbcP.getBoundingClientRect().left + 175;
+            cbcInput.style.left = settingsMenu.getBoundingClientRect().left + 250;
+            cbcP.style.top = settingsMenu.getBoundingClientRect().top + 5;
+            cbc.style.top = cbcP.getBoundingClientRect().top - 5;
+            cbcInput.style.top = cbcP.getBoundingClientRect().top - 5;
+            cbc.style.transitionDuration = "0.25s";
+            settingsClose.style.right = settingsMenu.getBoundingClientRect().left;
+            settingsClose.style.top = settingsMenu.getBoundingClientRect().top - 25;
+            settingsTitle.style.left = settingsMenu.getBoundingClientRect().left;
+            settingsTitle.style.top = settingsMenu.getBoundingClientRect().top - 60;
+        });
+        settingsEvent = settings.addEventListener("click", () => {
+            settingsMenu.showModal();
+            cbc.style.transitionDuration = "0s";
+            cbcP.style.left = settingsMenu.getBoundingClientRect().left + 5;
+            cbc.style.left = cbcP.getBoundingClientRect().left + 175;
+            cbcInput.style.left = settingsMenu.getBoundingClientRect().left + 250;
+            cbcP.style.top = settingsMenu.getBoundingClientRect().top + 5;
+            cbc.style.top = cbcP.getBoundingClientRect().top - 5;
+            cbcInput.style.top = cbcP.getBoundingClientRect().top - 5;
+            cbc.style.transitionDuration = "0.25s";
+            settingsClose.style.right = settingsMenu.getBoundingClientRect().left;
+            settingsClose.style.top = settingsMenu.getBoundingClientRect().top - 25;
+            settingsTitle.style.left = settingsMenu.getBoundingClientRect().left;
+            settingsTitle.style.top = settingsMenu.getBoundingClientRect().top - 60;
+        });
+        cbcInput.addEventListener("focusout", () => {
+            ballColorColor = document.querySelector("#cbcInput").value;
+        });
         mainMenu();
-      }, 3000)
-      mouseX = window.event.clientX;
-      mouseY = window.event.clientY;
-      if (
-        window.event.clientX > x &&
-        window.event.clientX < x + ballRadius * 2 &&
-        window.event.clientY > y &&
-        window.event.clientY < y + ballRadius * 2
-      ) {
-        startAllowed = false;
-        clearCurrentInterval();
-        mainMenu();
-      }
-    });
-    main.width = document.body.clientWidth;
-    main.height = window.innerHeight - 20;
-    x = Math.floor(Math.random() * main.width);
-    console.log(x);
-    resizeEvent = addEventListener("resize", () => {
-      main.width = document.body.clientWidth;
-      main.height = window.innerHeight - 20;
-      play.style.left =
-        main.getBoundingClientRect().left + main.width / 2 - 50 + "px";
-      play.style.top =
-        main.getBoundingClientRect().top + main.height / 2 - 50 + "px";
-    });
-    mainMenu();
-  </script>
+    </script>
 </body>
 
 </html>
