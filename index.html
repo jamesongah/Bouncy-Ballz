@@ -165,6 +165,16 @@
         var livesDialogP = document.getElementById("livesDialogP");
         var livesDialogB = document.getElementById("livesDialogB");
         var endAllowed = false;
+        var live1 = false;
+        var live2 = false;
+        var live3 = false;
+        var live4 = false;
+        var live5 = false;
+        var live6 = false;
+        var live7 = false;
+        var live8 = false;
+        var live9 = false;
+        var live10 = false;
 
         function start() {
             if (!startAllowed) {
@@ -243,6 +253,16 @@
                     lives = 3;
                     livesIndicator.innerHTML = "Lives: " + lives;
                     score = 0;
+                    live1 = false;
+                    live2 = false;
+                    live3 = false;
+                    live4 = false;
+                    live5 = false;
+                    live6 = false;
+                    live7 = false;
+                    live8 = false;
+                    live9 = false;
+                    live10 = false;
                     start();
                 });
             }
@@ -345,6 +365,66 @@
             y += dy;
             x2 += dx2;
             y2 += dy2;
+            if (live1 == false) {
+                if (score > 5000) {
+                    live1 = true;
+                    lives += 1
+                }
+            }
+            if (live2 == false) {
+                if (score > 10000) {
+                    live2 = true;
+                    lives += 1
+                }
+            }
+            if (live3 == false) {
+                if (score > 15000) {
+                    live3 = true;
+                    lives += 1
+                }
+            }
+            if (live4 == false) {
+                if (score > 20000) {
+                    live4 = true;
+                    lives += 1
+                }
+            }
+            if (live5 == false) {
+                if (score > 25000) {
+                    live5 = true;
+                    lives += 1
+                }
+            }
+            if (live6 == false) {
+                if (score > 30000) {
+                    live6 = true;
+                    lives += 1
+                }
+            }
+            if (live7 == false) {
+                if (score > 35000) {
+                    live7 = true;
+                    lives += 1
+                }
+            }
+            if (live8 == false) {
+                if (score > 40000) {
+                    live8 = true;
+                    lives += 1
+                }
+            }
+            if (live9 == false) {
+                if (score > 45000) {
+                    live9 = true;
+                    lives += 1
+                }
+            }
+            if (live10 == false) {
+                if (score > 50000) {
+                    live10 = true;
+                    lives += 1
+                }
+            }
             if (difficulty == "Easy") {
                 ballRadius += 0.01;
             }
@@ -497,9 +577,10 @@
                 score += 1.5;
             }
             if (difficulty == "Insane") {
-                score += 2;
+                score += 3;
             }
             scoreCounter.innerHTML = "Score: " + Math.floor(score);
+            livesIndicator.innerHTML = "Lives: " + lives;
         }
         main.addEventListener("mouseleave", () => {
             if (interval !== null) {
