@@ -25,10 +25,12 @@
 
         #score {
             left: 25px;
+            top: 10px;
         }
 
         #lives {
             right: 25px;
+            top: 10px;
         }
 
         #main {
@@ -77,25 +79,59 @@
             background-image: linear-gradient(to top, #666666, #999999);
             background-color: #00aa00;
         }
+
+        #topbar {
+            background-color: #000000;
+            color: #ffffff;
+            border: none;
+            width: 100%;
+            height: 25px;
+            top: 0px;
+            font-size: 20px;
+            position: fixed;
+            user-select: none;
+        }
+
+        #player {
+            width: 16px;
+            height: 16px;
+            border: none;
+            border-radius: 100px;
+            position: fixed;
+            background-color: #000000;
+            pointer-events: none;
+        }
     </style>
 </head>
 
 <body>
-    <dialog id="livesDialog" style="width: 320; height: 180;">
-        <h2>Continue</h2>
-        <p id="livesDialogP">You have _ live(s) left.</p>
-        <button style="width: 100; height: 25; cursor: pointer; position: absolute; bottom: 25px; left: 130px;"
-            id="livesDialogB">Continue</button>
-    </dialog>
     <center>
+        <div id="player"></div>
+        <div id="content"></div>
+        <dialog id="livesDialog" style="width: 320; height: 180; border: none; border-radius: 25px;">
+            <h2>Continue</h2>
+            <p id="livesDialogP">You have _ live(s) left.</p>
+            <button style="width: 100; height: 25; cursor: pointer; position: absolute; bottom: 25px; left: 130px;"
+                id="livesDialogB">Continue</button>
+        </dialog>
         <p id="score">Score: 0</p>
         <p id="lives">Lives: 0</p>
+        <div id="topbar"></div>
         <canvas id="main" width="0" height="0"></canvas>
         <dialog id="settingsMenu" style="width: 0; height: 0; border: none; border-radius: 15px;">
             <h1 id="settingsTitle" style="position: fixed;">Settings</h1>
             <button id="settingsClose"
                 style="background-color: #ff0000; border-radius: 100px; position: fixed; border: none; text-align: center; color: #ffffff; cursor: pointer;"
                 onclick="document.getElementById('settingsMenu').close();">×</button>
+            <p id="cpcP" style="font-size: 20px; left: 2px;">Custom Player Color</p>
+            <button id="cpc" data-state="off" onclick="cpcSwitch();"
+                style="margin: auto; background-color: #E9E9EA; border: none; padding: 0px; width: 52px; height: 31px; position: fixed; border-radius: 16px; transition-duration: 0.25s; cursor: pointer;">
+                <div id="cpcSlider"
+                    style="background-color: #ffffff; width: 25px; height: 25px; position: absolute; top: 3; left: 3; transition-duration: 0.25s; border-radius: 100px; border: none; padding: 0px; box-shadow: 0px 2px 3px rgba(0,0,0,0.3); pointer-events: none;">
+                </div>
+            </button>
+            <input disabled="true" id="cpcInput" type="color" style="position: fixed; cursor: not-allowed;"
+                height="31px"></input>
             <p id="cbcP" style="font-size: 20px; left: 2px;">Custom Ball Color</p>
             <button id="cbc" data-state="off" onclick="cbcSwitch();"
                 style="margin: auto; background-color: #E9E9EA; border: none; padding: 0px; width: 52px; height: 31px; position: fixed; border-radius: 16px; transition-duration: 0.25s; cursor: pointer;">
@@ -121,6 +157,7 @@
         </dialog>
     </center>
     <script>
+        var player = document.getElementById("player");
         var main = document.getElementById("main");
         var menu = document.getElementById("menu");
         var play = document.getElementById("play");
@@ -128,6 +165,11 @@
         var settingsMenu = document.getElementById("settingsMenu");
         var settingsTitle = document.getElementById("settingsTitle");
         var settingsClose = document.getElementById("settingsClose");
+        var cpc = document.getElementById("cpc");
+        var cpcP = document.getElementById("cpcP");
+        var cpcInput = document.getElementById("cpcInput");
+        var playerColor = "#000000";
+        var playerColorEnabled = false;
         var cbc = document.getElementById("cbc");
         var cbcP = document.getElementById("cbcP");
         var cbcInput = document.getElementById("cbcInput");
@@ -137,8 +179,7 @@
         var interval = null;
         var timeout = null;
         var score = 0;
-        var scoreIndicator = document.getElementById("scoreIndicator");
-        var scoreCounter = document.getElementById("score");
+        var scoreIndicator = document.getElementById("score");
         var x = null;
         var y = main.height = window.innerHeight - 20;
         var x2 = null;
@@ -175,11 +216,22 @@
         var live8 = false;
         var live9 = false;
         var live10 = false;
+        var topbar = document.getElementById("topbar");
+        var topbarTimeout = null;
+        const lifeElements = [];
+        var lifeElementID = 0;
 
         function start() {
             if (!startAllowed) {
                 startAllowed = true;
-                console.log("starting");
+                player.style.visibility = "visible";
+                player.style.backgroundColor = playerColor;
+                if (playerColorEnabled) {
+                    player.style.backgroundColor = document.querySelector("#cpcInput").value;
+                } else {
+                    player.style.backgroundColor = "#000000";
+                }
+                main.style.cursor = "none";
                 clearInterval(interval);
                 x = Math.floor(Math.random() * main.width);
                 x2 = Math.floor(Math.random() * main.width);
@@ -223,6 +275,8 @@
                 livesIndicator.innerHTML = "Lives: " + lives;
                 if (lives > 0) {
                     clearCurrentInterval();
+                    player.style.visibility = "hidden";
+                    main.style.cursor = "auto";
                     livesDialogP.innerHTML = "You have " + lives + " live(s) left.";
                     livesDialog.showModal();
                     livesDialogB.addEventListener("click", () => {
@@ -240,7 +294,8 @@
         }
         function mainMenu() {
             if (!mainMenuAllowed) {
-                console.log("main menu");
+                player.style.visibility = "hidden";
+                main.style.cursor = "auto";
                 mainMenuAllowed = true;
                 menu.show();
                 play.style.left = main.getBoundingClientRect().left + main.width / 2 - 50;
@@ -265,6 +320,90 @@
                     live10 = false;
                     start();
                 });
+            }
+        }
+
+        function topbarF(text) {
+            topbar.style.visibility = "visible";
+            topbar.innerHTML = text;
+            if (topbarTimeout !== null) {
+                clearTimeout(topbarTimeout);
+            }
+            topbarTimeout = setTimeout(() => {
+                topbar.style.visibility = "hidden";
+            }, 3000)
+        }
+
+        function lifeElement(scoreA) {
+            lifeElementID += 1;
+            var lifeE = document.createElement("div");
+            lifeE.id = "lifeElement" + lifeElementID;
+            lifeE.innerHTML = scoreA;
+            lifeE.style = "width: 25px; font-size: 10px; margin: auto; box-shadow: rgba(0,0,0,0.5); border: 2px solid #595959; border-radius: 1000px; background-color: #a6a6a6; color: #595959; position: fixed; padding: 6px 0; user-select: none; text-align: center; pointer-events: none;";
+            if (scoreA == 250) {
+                lifeE.style.backgroundColor = "#00cc00";
+                lifeE.style.color = "#008000";
+                lifeE.style.borderColor = "#008000";
+            }
+            if (scoreA == 500) {
+                lifeE.style.backgroundColor = "#3862fc";
+                lifeE.style.color = "#000066";
+                lifeE.style.borderColor = "#000066";
+            }
+            if (scoreA == 1000) {
+                lifeE.style.backgroundColor = "#ffa31a";
+                lifeE.style.color = "#804d00";
+                lifeE.style.borderColor = "#804d00";
+            }
+            if (scoreA == "1 Life") {
+                lifeE.style.backgroundColor = "#ff0000";
+                lifeE.style.color = "#470000";
+                lifeE.style.borderColor = "#470000";
+            }
+            let xt = Math.floor(Math.random() * main.width);
+            if (xt > main.width - 100) {
+                xt += -100;
+            } else if (xt < 100) {
+                xt += 100;
+            }
+            let yt = Math.floor(Math.random() * main.height);
+            if (yt > main.height - 100) {
+                yt += -100;
+            } else if (yt < 100) {
+                yt += 100;
+            }
+            lifeE.style.left = xt;
+            lifeE.style.top = yt;
+            if (scoreA !== "1 Life") {
+                lifeElements.push([xt, yt, scoreA, lifeE.id]);
+            } else {
+                lifeElements.push([xt, yt, "1 Life", lifeE.id])
+            }
+            document.getElementById("content").appendChild(lifeE);
+            setTimeout(() => {
+                lifeE.remove();
+                lifeElements.shift();
+            }, 2000);
+        }
+
+        function cpcSwitch() {
+            var slider = document.getElementById('cpcSlider');
+            let state = cpc.getAttribute('data-state');
+            if (state == 'on') {
+                cpc.setAttribute('data-state', 'off');
+                cpcInput.setAttribute("disabled", "true");
+                playerColorEnabled = false;
+                playerColor = "#000000"
+                cpcInput.style.cursor = "not-allowed";
+                slider.style.left = '3';
+                cpc.style.backgroundColor = "#E9E9EA";
+            } else {
+                cpc.setAttribute('data-state', 'on');
+                cpcInput.removeAttribute("disabled");
+                playerColorEnabled = true;
+                cpcInput.style.cursor = "pointer";
+                slider.style.left = '24';
+                cpc.style.backgroundColor = "#2ED057";
             }
         }
 
@@ -323,6 +462,26 @@
         }
 
         function draw() {
+            var CRandom = Math.floor(Math.random() * 200);
+            if (CRandom == 1) {
+                lifeElement(100);
+            }
+            var RRandom = Math.floor(Math.random() * 500);
+            if (RRandom == 1) {
+                lifeElement(250);
+            }
+            var LRandom = Math.floor(Math.random() * 1000);
+            if (LRandom == 1) {
+                lifeElement(500);
+            }
+            var ERandom = Math.floor(Math.random() * 2000);
+            if (ERandom == 1) {
+                lifeElement(1000);
+            }
+            var LifeRandom = Math.floor(Math.random() * 10000);
+            if (LifeRandom == 1) {
+                lifeElement("1 Life");
+            }
             var difficulty = dif.getAttribute("data-state");
             ctx.clearRect(0, 0, main.width, main.height);
             ctx.beginPath();
@@ -367,60 +526,70 @@
             y2 += dy2;
             if (live1 == false) {
                 if (score > 5000) {
+                    topbarF("You have gained 1 life!");
                     live1 = true;
                     lives += 1
                 }
             }
             if (live2 == false) {
                 if (score > 10000) {
+                    topbarF("You have gained 1 life!");
                     live2 = true;
                     lives += 1
                 }
             }
             if (live3 == false) {
                 if (score > 15000) {
+                    topbarF("You have gained 1 life!");
                     live3 = true;
                     lives += 1
                 }
             }
             if (live4 == false) {
                 if (score > 20000) {
+                    topbarF("You have gained 1 life!");
                     live4 = true;
                     lives += 1
                 }
             }
             if (live5 == false) {
                 if (score > 25000) {
+                    topbarF("You have gained 1 life!");
                     live5 = true;
                     lives += 1
                 }
             }
             if (live6 == false) {
                 if (score > 30000) {
+                    topbarF("You have gained 1 life!");
                     live6 = true;
                     lives += 1
                 }
             }
             if (live7 == false) {
                 if (score > 35000) {
+                    topbarF("You have gained 1 life!");
                     live7 = true;
                     lives += 1
                 }
             }
             if (live8 == false) {
                 if (score > 40000) {
+                    topbarF("You have gained 1 life!");
                     live8 = true;
                     lives += 1
                 }
             }
             if (live9 == false) {
                 if (score > 45000) {
+                    topbarF("You have gained 1 life!");
                     live9 = true;
                     lives += 1
                 }
             }
             if (live10 == false) {
                 if (score > 50000) {
+                    topbarF("You have gained 1 life!");
                     live10 = true;
                     lives += 1
                 }
@@ -548,9 +717,9 @@
             if (mouseX !== null && mouseY !== null) {
                 if (
                     mouseX > x &&
-                    mouseX < x + ballRadius &&
+                    mouseX < x + ballRadius * 2 &&
                     mouseY > y &&
-                    mouseY < y + ballRadius
+                    mouseY < y + ballRadius * 2
                 ) {
                     end();
                 }
@@ -559,9 +728,9 @@
                 if (mouseX !== null && mouseY !== null) {
                     if (
                         mouseX > x2 &&
-                        mouseX < x2 + ballRadius &&
+                        mouseX < x2 + ballRadius * 2 &&
                         mouseY > y2 &&
-                        mouseY < y2 + ballRadius
+                        mouseY < y2 + ballRadius * 2
                     ) {
                         end();
                     }
@@ -579,7 +748,7 @@
             if (difficulty == "Insane") {
                 score += 3;
             }
-            scoreCounter.innerHTML = "Score: " + Math.floor(score);
+            scoreIndicator.innerHTML = "Score: " + Math.floor(score);
             livesIndicator.innerHTML = "Lives: " + lives;
         }
         main.addEventListener("mouseleave", () => {
@@ -588,6 +757,8 @@
             }
         });
         document.addEventListener("mousemove", () => {
+            player.style.left = window.event.clientX - 8;
+            player.style.top = window.event.clientY - 8;
             clearTimeout(timeout);
             timeout = setTimeout(() => {
                 end();
@@ -602,7 +773,28 @@
             ) {
                 end();
             }
+            for (let i = 0; i < lifeElements.length; i++) {
+                var xLife = lifeElements[i][0];
+                var yLife = lifeElements[i][1];
+                var scoreLife = lifeElements[i][2];
+                var LifeID = lifeElements[i][3];
+                if (window.event.clientX > xLife && window.event.clientX < xLife + 25 && window.event.clientY > yLife && window.event.clientY < yLife + 25) {
+                    if (document.getElementById(LifeID) !== null) {
+                        if (scoreLife !== "1 Life") {
+                            score += scoreLife;
+                            scoreIndicator.innerHTML = "Score: " + Math.floor(score);
+                            topbarF("Added " + scoreLife + " to your score!");
+                        } else {
+                            lives += 1;
+                            livesIndicator.innerHTML = "Lives: " + lives;
+                            topbarF("You have gained 1 life!");
+                        }
+                        document.getElementById(LifeID).remove();
+                    }
+                }
+            }
         });
+        topbar.style.visibility = "hidden";
         main.width = document.body.clientWidth;
         main.height = window.innerHeight;
         settingsMenu.style.width = (0.4 * document.body.clientWidth);
@@ -612,7 +804,6 @@
         settings.style.left = play.getBoundingClientRect().left + 125;
         settings.style.top = play.getBoundingClientRect().top + 5;
         x = Math.floor(Math.random() * main.width);
-        console.log(x);
         resizeEvent = addEventListener("resize", () => {
             main.width = document.body.clientWidth;
             main.height = window.innerHeight;
@@ -622,49 +813,20 @@
             settings.style.top = play.getBoundingClientRect().top + 5;
             settingsMenu.style.width = (0.4 * document.body.clientWidth);
             settingsMenu.style.height = (0.5 * window.innerHeight);
-            cbc.style.transitionDuration = "0s";
             dif.style.transitionDuration = "0s";
             difLabel.style.transitionDuration = "0s";
+            cpc.style.transitionDuration = "0s";
+            cbc.style.transitionDuration = "0s";
+            cpcP.style.left = settingsMenu.getBoundingClientRect().left + 5;
+            cpc.style.left = cpcP.getBoundingClientRect().left + 200;
+            cpcInput.style.left = settingsMenu.getBoundingClientRect().left + 275;
+            cpcP.style.top = settingsMenu.getBoundingClientRect().top + 50;
+            cpc.style.top = cpcP.getBoundingClientRect().top - 5;
+            cpcInput.style.top = cpcP.getBoundingClientRect().top - 5;
             cbcP.style.left = settingsMenu.getBoundingClientRect().left + 5;
             cbc.style.left = cbcP.getBoundingClientRect().left + 175;
             cbcInput.style.left = settingsMenu.getBoundingClientRect().left + 250;
-            cbcP.style.top = settingsMenu.getBoundingClientRect().top + 50;
-            cbc.style.top = cbcP.getBoundingClientRect().top - 5;
-            cbcInput.style.top = cbcP.getBoundingClientRect().top - 5;
-            difP.style.left = settingsMenu.getBoundingClientRect().left + 5;
-            dif.style.left = difP.getBoundingClientRect().left + 90;
-            if (dif.getAttribute("data-state") == "Easy") {
-                difLabel.style.left = dif.getBoundingClientRect().left + 51;
-            }
-            if (dif.getAttribute("data-state") == "Medium") {
-                difLabel.style.left = dif.getBoundingClientRect().left + 51;
-            }
-            if (dif.getAttribute("data-state") == "Hard") {
-                difLabel.style.left = dif.getBoundingClientRect().left + 5;
-            }
-            if (dif.getAttribute("data-state") == "Insane") {
-                difLabel.style.left = dif.getBoundingClientRect().left + 5;
-            }
-            difP.style.top = settingsMenu.getBoundingClientRect().top + 5
-            dif.style.top = difP.getBoundingClientRect().top - 5;
-            difLabel.style.top = dif.getBoundingClientRect().top + 9;
-            difLabel.style.transitionDuration = "0.25s";
-            dif.style.transitionDuration = "0.25s";
-            cbc.style.transitionDuration = "0.25s";
-            settingsClose.style.right = settingsMenu.getBoundingClientRect().left;
-            settingsClose.style.top = settingsMenu.getBoundingClientRect().top - 25;
-            settingsTitle.style.left = settingsMenu.getBoundingClientRect().left;
-            settingsTitle.style.top = settingsMenu.getBoundingClientRect().top - 60;
-        });
-        settingsEvent = settings.addEventListener("click", () => {
-            settingsMenu.showModal();
-            cbc.style.transitionDuration = "0s";
-            dif.style.transitionDuration = "0s";
-            difLabel.style.transitionDuration = "0s";
-            cbcP.style.left = settingsMenu.getBoundingClientRect().left + 5;
-            cbc.style.left = cbcP.getBoundingClientRect().left + 175;
-            cbcInput.style.left = settingsMenu.getBoundingClientRect().left + 250;
-            cbcP.style.top = settingsMenu.getBoundingClientRect().top + 50;
+            cbcP.style.top = settingsMenu.getBoundingClientRect().top + 95;
             cbc.style.top = cbcP.getBoundingClientRect().top - 5;
             cbcInput.style.top = cbcP.getBoundingClientRect().top - 5;
             difP.style.left = settingsMenu.getBoundingClientRect().left + 5;
@@ -684,8 +846,53 @@
             difP.style.top = settingsMenu.getBoundingClientRect().top + 5;
             dif.style.top = difP.getBoundingClientRect().top - 5;
             difLabel.style.top = dif.getBoundingClientRect().top + 9;
-            difLabel.style.transitionDuration = "0.25s";
             dif.style.transitionDuration = "0.25s";
+            difLabel.style.transitionDuration = "0.25s";
+            cpc.style.transitionDuration = "0.25s";
+            cbc.style.transitionDuration = "0.25s";
+            settingsClose.style.right = settingsMenu.getBoundingClientRect().left;
+            settingsClose.style.top = settingsMenu.getBoundingClientRect().top - 25;
+            settingsTitle.style.left = settingsMenu.getBoundingClientRect().left;
+            settingsTitle.style.top = settingsMenu.getBoundingClientRect().top - 60;
+        });
+        settingsEvent = settings.addEventListener("click", () => {
+            settingsMenu.showModal();
+            dif.style.transitionDuration = "0s";
+            difLabel.style.transitionDuration = "0s";
+            cpc.style.transitionDuration = "0s";
+            cbc.style.transitionDuration = "0s";
+            cpcP.style.left = settingsMenu.getBoundingClientRect().left + 5;
+            cpc.style.left = cpcP.getBoundingClientRect().left + 200;
+            cpcInput.style.left = settingsMenu.getBoundingClientRect().left + 275;
+            cpcP.style.top = settingsMenu.getBoundingClientRect().top + 50;
+            cpc.style.top = cpcP.getBoundingClientRect().top - 5;
+            cpcInput.style.top = cpcP.getBoundingClientRect().top - 5;
+            cbcP.style.left = settingsMenu.getBoundingClientRect().left + 5;
+            cbc.style.left = cbcP.getBoundingClientRect().left + 175;
+            cbcInput.style.left = settingsMenu.getBoundingClientRect().left + 250;
+            cbcP.style.top = settingsMenu.getBoundingClientRect().top + 95;
+            cbc.style.top = cbcP.getBoundingClientRect().top - 5;
+            cbcInput.style.top = cbcP.getBoundingClientRect().top - 5;
+            difP.style.left = settingsMenu.getBoundingClientRect().left + 5;
+            dif.style.left = difP.getBoundingClientRect().left + 90;
+            if (dif.getAttribute("data-state") == "Easy") {
+                difLabel.style.left = dif.getBoundingClientRect().left + 51;
+            }
+            if (dif.getAttribute("data-state") == "Medium") {
+                difLabel.style.left = dif.getBoundingClientRect().left + 51;
+            }
+            if (dif.getAttribute("data-state") == "Hard") {
+                difLabel.style.left = dif.getBoundingClientRect().left + 5;
+            }
+            if (dif.getAttribute("data-state") == "Insane") {
+                difLabel.style.left = dif.getBoundingClientRect().left + 5;
+            }
+            difP.style.top = settingsMenu.getBoundingClientRect().top + 5;
+            dif.style.top = difP.getBoundingClientRect().top - 5;
+            difLabel.style.top = dif.getBoundingClientRect().top + 9;
+            dif.style.transitionDuration = "0.25s";
+            difLabel.style.transitionDuration = "0.25s";
+            cpc.style.transitionDuration = "0.25s";
             cbc.style.transitionDuration = "0.25s";
             settingsClose.style.right = settingsMenu.getBoundingClientRect().left;
             settingsClose.style.top = settingsMenu.getBoundingClientRect().top - 25;
@@ -699,4 +906,4 @@
     </script>
 </body>
 
-</html>
+</html>[]
